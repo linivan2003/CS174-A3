@@ -75,10 +75,7 @@ export class Assignment3 extends Scene {
         const scale_factor = 1 + 2 * Math.abs(0.5 - cycle); 
         const color_factor = 2 * Math.abs(0.5 - cycle); 
         const interpolated_color = color(1, color_factor, color_factor, 1); 
-        let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));
-        let model_transform = Mat4.identity();
-        const yellow = hex_color('#FFFF00');
-        // TODO: Lighting (Requirement 2)
+        let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 0, 0, 1); // Center of the sun
         const radius = 1+ (cycle * 2)
         const light_size = radius**10;
