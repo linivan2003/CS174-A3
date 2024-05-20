@@ -11,7 +11,7 @@ export class Assignment3 extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-            torus: new defs.Torus(15, 15),
+            torus: new defs.Torus(40, 40),
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
@@ -38,6 +38,10 @@ export class Assignment3 extends Scene {
                 ambient: 0, diffusivity: 0.25, color: hex_color('#80FFFF'), specularity: 1,}),
             planet2_phong: new Material(new defs.Phong_Shader(), {
                 ambient: 0, diffusivity: 0.25, color: hex_color('#80FFFF'), specularity: 1,}),
+            planet3: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: 1, color: hex_color('#B08040'), specularity: 1,}),
+            ring: new Material(new Ring_Shader(), {
+                ambient: 1, diffusivity: 0, color: hex_color('#B08040'), specularity: 0,}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -71,14 +75,14 @@ export class Assignment3 extends Scene {
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        const period = 10;
         const scale_factor = 2 + Math.sin((t/10)*2*Math.PI); 
         const color_factor = 0.5 + 0.5*Math.sin((t/10)*2*Math.PI);
-        const interpolated_color = color(1, 1, 1, 1); //
-        let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));         // TODO: Lighting (Requirement 2)
+        const interpolated_color = color(1, color_factor, color_factor, 1); //
+        let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));      
+        // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 0, 0, 1); // Center of the sun
         const radius = scale_factor;
-        const light_size = 3**10; //
+        const light_size = radius**10; 
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, interpolated_color, light_size)]; //draw light
         this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: interpolated_color}));
@@ -88,16 +92,23 @@ export class Assignment3 extends Scene {
         let tran1 = Mat4.translation(5, 0, 0);
         let planet1_transform = Mat4.identity().times(rot1).times(tran1);
         this.shapes.planet1.draw(context, program_state, planet1_transform, this.materials.planet1);
-        let rot2 = Mat4.rotation(theta/1.8,0,1,0);
+        let rot2 = Mat4.rotation(theta/1.8,0,1,0);// planet 2
         let tran2 = Mat4.translation(9, 0, 0);
         let planet2_transform = Mat4.identity().times(rot2).times(tran2);
-        if (Math.floor(t) % 2 == 0){
+        if (Math.floor(t) % 2 == 0){  
         this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_gouraud);
         }
         else 
         {
         this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_phong);
         }
+        let rot3 = Mat4.rotation(theta/1.4,0,1,0);
+        let tran3 = Mat4.translation(13, 0, 0); //planet 3 
+        let planet3_transform = Mat4.identity().times(rot3).times(tran3);
+        this.shapes.sphere.draw(context, program_state, planet3_transform, this.materials.planet3);
+        let ring = Mat4.scale(3.5, 3.5, 0.1); //Ring 
+        let ring_transform = planet3_transform.times(ring)
+        this.shapes.torus.draw(context, program_state, ring_transform, this.materials.ring);
     }
 }
 
@@ -279,7 +290,9 @@ class Ring_Shader extends Shader {
         uniform mat4 projection_camera_model_transform;
         
         void main(){
-          
+            center = model_transform * vec4(0, 0, 0, 1);
+            point_position = model_transform * vec4(position, 1);
+            gl_Position = projection_camera_model_transform * vec4(position, 1);  
         }`;
     }
 
@@ -288,7 +301,8 @@ class Ring_Shader extends Shader {
         // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
         return this.shared_glsl_code() + `
         void main(){
-          
+            float scalar = sin(18.0 * distance(point_position.xyz, center.xyz));
+            gl_FragColor = scalar * vec4(0.6, 0.4, 0.1, 1);
         }`;
     }
 }
