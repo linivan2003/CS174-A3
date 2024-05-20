@@ -50,11 +50,11 @@ export class Assignment3 extends Scene {
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
-    }
+        }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
+        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
         this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
@@ -122,6 +122,20 @@ export class Assignment3 extends Scene {
         let tran_moon = Mat4.translation(-2,0,0);
         let moon_transform = planet4_transform.times(rot_moon).times(tran_moon);
         this.shapes.moon.draw(context, program_state, moon_transform, this.materials.moon); 
+
+        //camera
+        let inv = Mat4.translation(0, 0, 5);
+        this.planet_1 = Mat4.inverse(planet1_transform.times(inv));
+        this.planet_2 = Mat4.inverse(planet2_transform.times(inv));
+        this.planet_3 = Mat4.inverse(planet3_transform.times(inv));
+        this.planet_4 = Mat4.inverse(planet4_transform.times(inv));
+        this.moon = Mat4.inverse(moon_transform.times(inv));
+
+        if (this.attached != undefined) {
+            program_state.camera_inverse = this.attached().map((x, i) =>
+            Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
+        );
+        }
     }
 }
 
