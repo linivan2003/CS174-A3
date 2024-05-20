@@ -34,10 +34,10 @@ export class Assignment3 extends Scene {
             //        (Requirement 4)
             planet1: new Material(new defs.Phong_Shader(), {
                 ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0,}),
-            planet2_gouraud: new Material(new defs.Phong_Shader(), {
+            planet2_gouraud: new Material(new Gouraud_Shader(), {
                 ambient: 0, diffusivity: 0.25, color: hex_color('#80FFFF'), specularity: 1,}),
             planet2_phong: new Material(new defs.Phong_Shader(), {
-                ambient: 0, diffusivity: 0.25, color: hex_color('#808080'), specularity: 1,}),
+                ambient: 0, diffusivity: 0.25, color: hex_color('#80FFFF'), specularity: 1,}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -72,14 +72,13 @@ export class Assignment3 extends Scene {
         // this.shapes.[XXX].draw([XXX]) // <--example
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const period = 10;
-        const cycle = (t%period)/ period;
-        const scale_factor = 2 + Math.sin((t/10)*2*Math.PI);
+        const scale_factor = 2 + Math.sin((t/10)*2*Math.PI); 
         const color_factor = 0.5 + 0.5*Math.sin((t/10)*2*Math.PI);
-        const interpolated_color = color(1, color_factor, color_factor, 1); 
+        const interpolated_color = color(1, 1, 1, 1); //
         let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 0, 0, 1); // Center of the sun
         const radius = scale_factor;
-        const light_size = radius**10;
+        const light_size = 3**10; //
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, interpolated_color, light_size)]; //draw light
         this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: interpolated_color}));
@@ -92,13 +91,13 @@ export class Assignment3 extends Scene {
         let rot2 = Mat4.rotation(theta/1.8,0,1,0);
         let tran2 = Mat4.translation(9, 0, 0);
         let planet2_transform = Mat4.identity().times(rot2).times(tran2);
-        if (t % 2 == 0) {
-            this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_gouraud
-            );
-          } else {
-            this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_phong
-            );
-          }
+        if (Math.floor(t) % 2 == 0){
+        this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_gouraud);
+        }
+        else 
+        {
+        this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_phong);
+        }
     }
 }
 
@@ -161,19 +160,24 @@ class Gouraud_Shader extends Shader {
     vertex_glsl_code() {
         // ********* VERTEX SHADER *********
         return this.shared_glsl_code() + `
-            attribute vec3 position, normal;                            
-            // Position is expressed in object coordinates.
-            
-            uniform mat4 model_transform;
-            uniform mat4 projection_camera_model_transform;
-    
-            void main(){                                                                   
-                gl_Position = projection_camera_model_transform * vec4(position, 1.0);
-                N = normalize(mat3(model_transform) * normal / squared_scale);
-                vertex_worldspace = (model_transform * vec4(position, 1.0)).xyz;
-                vertex_color = vec4(shape_color.xyz * ambient, shape_color.w);
-                vertex_color.xyz += phong_model_lights(N, vertex_worldspace);
-            } `;
+        attribute vec3 position, normal;
+        uniform mat4 model_transform;
+        uniform mat4 projection_camera_model_transform;
+
+        varying vec4 vertex_color;
+
+        void main() {
+            // The vertex's final resting place (in NDCS):
+            gl_Position = projection_camera_model_transform * vec4(position, 1.0);
+
+            // The final normal vector in screen space.
+            vec3 N = normalize(mat3(model_transform) * normal / squared_scale);
+            vec3 vertex_worldspace = (model_transform * vec4(position, 1.0)).xyz;
+
+            // Compute the vertex color using Phong lighting model
+            vertex_color = vec4(shape_color.xyz * ambient, shape_color.w);
+            vertex_color.xyz += phong_model_lights(N, vertex_worldspace);
+        } `;
     }
 
     fragment_glsl_code() {
@@ -181,9 +185,11 @@ class Gouraud_Shader extends Shader {
         // A fragment is a pixel that's overlapped by the current triangle.
         // Fragments affect the final image or get discarded due to depth.
         return this.shared_glsl_code() + `
-            void main() {
-                gl_FragColor = vertex_color; // Use the interpolated vertex color
-            } `;
+        varying vec4 vertex_color;
+
+        void main() {
+            gl_FragColor = vertex_color; // Use the interpolated vertex color
+        } `;
     }
 
     send_material(gl, gpu, material) {
