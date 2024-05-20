@@ -15,6 +15,8 @@ export class Assignment3 extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
+
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
         };
@@ -30,6 +32,8 @@ export class Assignment3 extends Scene {
                 {ambient: 1, diffusivity: 1, color: hex_color("ffff00")}),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
+            planet1: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0,}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -59,29 +63,28 @@ export class Assignment3 extends Scene {
 
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
-
-       
-
-
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-         
-        
         
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const period = 10;
         const cycle = (t%period)/ period;
-        const scale_factor = 1 + 2 * Math.abs(0.5 - cycle); 
-        const color_factor = 2 * Math.abs(0.5 - cycle); 
+        const scale_factor = 2 + Math.sin((t/10)*2*Math.PI);
+        const color_factor = 0.5 + 0.5*Math.sin((t/10)*2*Math.PI);
         const interpolated_color = color(1, color_factor, color_factor, 1); 
         let sun_transform = Mat4.identity().times(Mat4.scale(scale_factor, scale_factor, scale_factor));         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 0, 0, 1); // Center of the sun
-        const radius = 1+ (cycle * 2)
+        const radius = scale_factor;
         const light_size = radius**10;
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, interpolated_color, light_size)];
+        program_state.lights = [new Light(light_position, interpolated_color, light_size)]; //draw light
         this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: interpolated_color}));
+         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
+        let theta = t;
+        let rot1 = Mat4.rotation(theta, 0, 1, 0); //Planet 1 rotation
+        let tran1 = Mat4.translation(5, 0, 0);
+        let planet1_transform = Mat4.identity().times(rot1).times(tran1);
+        this.shapes.planet1.draw(context, program_state, planet1_transform, this.materials.planet1);
     }
 }
 
