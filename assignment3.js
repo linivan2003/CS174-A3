@@ -44,7 +44,7 @@ export class Assignment3 extends Scene {
             ring: new Material(new Ring_Shader(), {
                 ambient: 1, diffusivity: 0, color: hex_color('#B08040'), specularity: 0,}),
             planet4: new Material(new defs.Phong_Shader(), {
-                ambient: 0, diffusivity: .5, color: hex_color('#ADD8E6'), specularity: 0.9,}),
+                ambient: 0, diffusivity: .5, color: hex_color('#6495ED'), specularity: 0.9,}),
             moon: new Material(new defs.Phong_Shader(), {
                 ambient: 0, diffusivity: 1, color: hex_color('#800080'), specularity: 1,}),
         }
