@@ -17,6 +17,7 @@ export class Assignment3 extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             planet2: new defs.Subdivision_Sphere(3),
+            moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
         };
@@ -42,6 +43,10 @@ export class Assignment3 extends Scene {
                 ambient: 0, diffusivity: 1, color: hex_color('#B08040'), specularity: 1,}),
             ring: new Material(new Ring_Shader(), {
                 ambient: 1, diffusivity: 0, color: hex_color('#B08040'), specularity: 0,}),
+            planet4: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: .5, color: hex_color('#ADD8E6'), specularity: 0.9,}),
+            moon: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: 1, color: hex_color('#800080'), specularity: 1,}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -92,7 +97,7 @@ export class Assignment3 extends Scene {
         let tran1 = Mat4.translation(5, 0, 0);
         let planet1_transform = Mat4.identity().times(rot1).times(tran1);
         this.shapes.planet1.draw(context, program_state, planet1_transform, this.materials.planet1);
-        let rot2 = Mat4.rotation(theta/1.8,0,1,0);// planet 2
+        let rot2 = Mat4.rotation(theta/2,0,1,0);// planet 2
         let tran2 = Mat4.translation(9, 0, 0);
         let planet2_transform = Mat4.identity().times(rot2).times(tran2);
         if (Math.floor(t) % 2 == 0){  
@@ -102,13 +107,21 @@ export class Assignment3 extends Scene {
         {
         this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_phong);
         }
-        let rot3 = Mat4.rotation(theta/1.4,0,1,0);
-        let tran3 = Mat4.translation(13, 0, 0); //planet 3 
+        let rot3 = Mat4.rotation(theta/3,0,1,0); //planet 3
+        let tran3 = Mat4.translation(13, 0, 0); 
         let planet3_transform = Mat4.identity().times(rot3).times(tran3);
         this.shapes.sphere.draw(context, program_state, planet3_transform, this.materials.planet3);
         let ring = Mat4.scale(3.5, 3.5, 0.1); //Ring 
         let ring_transform = planet3_transform.times(ring)
         this.shapes.torus.draw(context, program_state, ring_transform, this.materials.ring);
+        let rot4 = Mat4.rotation(theta/4,0,1,0); //planet 4
+        let tran4 = Mat4.translation(17, 0, 0);
+        let planet4_transform = Mat4.identity().times(rot4).times(tran4);
+        this.shapes.sphere.draw(context, program_state, planet4_transform, this.materials.planet4); 
+        let rot_moon = Mat4.rotation(t,0,1,0);//moon
+        let tran_moon = Mat4.translation(-2,0,0);
+        let moon_transform = planet4_transform.times(rot_moon).times(tran_moon);
+        this.shapes.moon.draw(context, program_state, moon_transform, this.materials.moon); 
     }
 }
 
