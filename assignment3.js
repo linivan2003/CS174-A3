@@ -16,7 +16,7 @@ export class Assignment3 extends Scene {
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
             planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-
+            planet2: new defs.Subdivision_Sphere(3),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
         };
@@ -34,6 +34,10 @@ export class Assignment3 extends Scene {
             //        (Requirement 4)
             planet1: new Material(new defs.Phong_Shader(), {
                 ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0,}),
+            planet2_gouraud: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: 0.25, color: hex_color('#80FFFF'), specularity: 1,}),
+            planet2_phong: new Material(new defs.Phong_Shader(), {
+                ambient: 0, diffusivity: 0.25, color: hex_color('#808080'), specularity: 1,}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -81,10 +85,20 @@ export class Assignment3 extends Scene {
         this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: interpolated_color}));
          // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         let theta = t;
-        let rot1 = Mat4.rotation(theta, 0, 1, 0); //Planet 1 rotation
+        let rot1 = Mat4.rotation(theta, 0, 1, 0); //Planet 1 
         let tran1 = Mat4.translation(5, 0, 0);
         let planet1_transform = Mat4.identity().times(rot1).times(tran1);
         this.shapes.planet1.draw(context, program_state, planet1_transform, this.materials.planet1);
+        let rot2 = Mat4.rotation(theta/1.8,0,1,0);
+        let tran2 = Mat4.translation(9, 0, 0);
+        let planet2_transform = Mat4.identity().times(rot2).times(tran2);
+        if (t % 2 == 0) {
+            this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_gouraud
+            );
+          } else {
+            this.shapes.planet2.draw(context,program_state,planet2_transform,this.materials.planet2_phong
+            );
+          }
     }
 }
 
@@ -154,11 +168,11 @@ class Gouraud_Shader extends Shader {
             uniform mat4 projection_camera_model_transform;
     
             void main(){                                                                   
-                // The vertex's final resting place (in NDCS):
-                gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
-                // The final normal vector in screen space.
-                N = normalize( mat3( model_transform ) * normal / squared_scale);
-                vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
+                gl_Position = projection_camera_model_transform * vec4(position, 1.0);
+                N = normalize(mat3(model_transform) * normal / squared_scale);
+                vertex_worldspace = (model_transform * vec4(position, 1.0)).xyz;
+                vertex_color = vec4(shape_color.xyz * ambient, shape_color.w);
+                vertex_color.xyz += phong_model_lights(N, vertex_worldspace);
             } `;
     }
 
@@ -167,11 +181,8 @@ class Gouraud_Shader extends Shader {
         // A fragment is a pixel that's overlapped by the current triangle.
         // Fragments affect the final image or get discarded due to depth.
         return this.shared_glsl_code() + `
-            void main(){                                                           
-                // Compute an initial (ambient) color:
-                gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
-                // Compute the final color with contributions from lights:
-                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+            void main() {
+                gl_FragColor = vertex_color; // Use the interpolated vertex color
             } `;
     }
 
